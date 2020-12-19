@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import Buefy from 'buefy';
 import humps from 'humps';
+import VueI18n from 'vue-i18n';
 
 import App from './App.vue';
 import router from './router';
@@ -8,6 +9,18 @@ import store from './store';
 import * as api from './api';
 import utils from './utils';
 import { models } from './constants';
+import en from './en';
+
+// Internationalisation.
+Vue.use(VueI18n);
+
+// Create VueI18n instance with options
+const i18n = new VueI18n({
+  locale: 'en', // set locale
+});
+
+i18n.setLocaleMessage('en', en);
+
 
 Vue.use(Buefy, {});
 Vue.config.productionTip = false;
@@ -41,5 +54,6 @@ if (window.CONFIG) {
 new Vue({
   router,
   store,
+  i18n,
   render: (h) => h(App),
 }).$mount('#app');

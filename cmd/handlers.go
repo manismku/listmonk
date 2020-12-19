@@ -31,7 +31,10 @@ type pagination struct {
 	Limit   int `json:"limit"`
 }
 
-var reUUID = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+var (
+	reUUID     = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+	reLangCode = regexp.MustCompile("[^a-zA-Z_0-9]")
+)
 
 // registerHandlers registers HTTP handlers.
 func registerHTTPHandlers(e *echo.Echo) {
@@ -40,6 +43,7 @@ func registerHTTPHandlers(e *echo.Echo) {
 	g.GET("/", handleIndexPage)
 	g.GET("/api/health", handleHealthCheck)
 	g.GET("/api/config.js", handleGetConfigScript)
+	g.GET("/api/lang/:lang", handleLoadLanguage)
 	g.GET("/api/dashboard/charts", handleGetDashboardCharts)
 	g.GET("/api/dashboard/counts", handleGetDashboardCounts)
 
@@ -152,6 +156,23 @@ func handleIndexPage(c echo.Context) error {
 // handleHealthCheck is a healthcheck endpoint that returns a 200 response.
 func handleHealthCheck(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
+}
+
+// handleLoadLanguage returns the JSON language pack given the language code.
+func handleLoadLanguage(c echo.Context) error {
+	app := c.Get("app").(*App)
+
+	lang := c.Param("lang")
+	if len(lang) > 6 || reLangCode.MatchString(lang) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid language code.")
+	}
+
+	b, err := app.fs.Read("/lang/" + lang)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Unknown language.")
+	}
+
+	return c.JSONBlob(http.StatusOK, b)
 }
 
 // basicAuth middleware does an HTTP BasicAuth authentication for admin handlers.
